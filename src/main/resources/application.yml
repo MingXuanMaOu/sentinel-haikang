@@ -1,0 +1,17 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: minio
+  thymeleaf:
+    cache: false #关闭缓存
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+minio:
+  endpoint: http://101.43.166.26:9000
+  accesskey: minioadmin
+  secretKey: minioadmin
+
