@@ -3,6 +3,7 @@ package com.ming.controller;
 import com.alibaba.fastjson.JSON;
 import com.ming.config.Res;
 import io.minio.*;
+import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -50,7 +52,7 @@ public class MinioController {
     }
 
     @PostMapping("/upload")
-    public Res upload(@RequestParam(name = "file", required = false) MultipartFile[] file) {
+    public Res upload(@RequestParam(name = "file", required = true) MultipartFile[] file) {
         Res res = new Res();
         res.setCode(500);
 
@@ -71,7 +73,7 @@ public class MinioController {
                         PutObjectArgs
                                 .builder()
                                 .bucket(MINIO_BUCKET)
-                                .object(orgfileName)
+                                .object("123/" + orgfileName)
                                 .stream(in, in.available(), -1)
                                 .build()
                 );
@@ -125,6 +127,29 @@ public class MinioController {
                     log.error(e.getMessage());
                 }
             }
+        }
+    }
+    @GetMapping("/image/{imageName}")
+    public void getImage(@PathVariable("imageName") String imageName, HttpServletResponse response) throws Exception {
+        String fileName = imageName;
+        try {
+            InputStream stream = minioClient.getObject(GetObjectArgs
+                    .builder()
+                    .bucket(MINIO_BUCKET)
+                    .object(fileName)
+                    .build());
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int n = 0;
+            while (-1 != (n = stream.read(buffer))) {
+                outputStream.write(buffer, 0, n);
+            }
+
+//            response.setContentType(getServletContext().getMimeType(fileName));
+            response.setContentLength(outputStream.size());
+            response.getOutputStream().write(outputStream.toByteArray());
+        } catch (MinioException e) {
+            e.printStackTrace();
         }
     }
 
